@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MEMEORIES — Swipeable Photo Album</title>
+    <style>
+        :root {
+            --bg: #f9f4ed;
+            --text: #3e3640;
+            --text-muted: #8a7e7a;
+            --accent: #c4976b;
+            --accent-soft: #e0c9a6;
+            --accent-deep: #8b5e3c;
+            --card-bg: #fdfaf5;
+            --shadow-md: 0 8px 28px rgba(60, 40, 20, 0.12);
+            --shadow-lg: 0 20px 45px rgba(40, 25, 10, 0.22);
+            --tape: #d4c5a9;
+            --tape2: #c9d5c0;
+            --tape3: #dcc9b6;
+            --border-soft: #e5dbce;
+            --radius: 18px;
+            --radius-lg: 22px;
+            --font-serif: 'Georgia', 'Times New Roman', serif;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --transition: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            overflow: hidden;
+            background-image:
+                radial-gradient(ellipse at 20% 30%, rgba(210, 180, 140, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(200, 170, 140, 0.18) 0%, transparent 60%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .header {
+            text-align: center;
+        }
+        .header__title {
+            font-family: var(--font-serif);
+            font-size: 2.1rem;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .header__subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .stack-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            perspective: 800px;
+        }
+        .stack {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .photo-card {
+            position: absolute;
+            inset: 0;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 0.8rem 0.8rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.4s ease, opacity 0.4s ease, box-shadow 0.4s;
+            will-change: transform;
+            touch-action: none;
+            user-select: none;
+        }
+        .photo-card.active {
+            z-index: 10;
+            pointer-events: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        .photo-card.stacked {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .photo-card__tape {
+            position: absolute;
+            top: -10px;
+            z-index: 3;
+            width: 50px;
+            height: 20px;
+            border-radius: 2px;
+            opacity: 0.85;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+        .tape-1 { left: 20%; background: var(--tape); transform: rotate(-4deg); }
+        .tape-2 { right: 20%; background: var(--tape2); transform: rotate(3deg); }
+        .tape-3 { left: 32%; background: var(--tape3); transform: rotate(-2deg); }
+
+        .photo-card__image-wrap {
+            width: 100%;
+            flex: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #e8e0d5;
+        }
+        .photo-card__image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-card__date {
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 0.8rem;
+        }
+        .photo-card__caption {
+            font-family: var(--font-serif);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--text);
+            margin-top: 0.1rem;
+            opacity: 0.75;
+        }
+        .photo-card__favorite {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 5;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(4px);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c97a7a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            transition: 0.2s;
+        }
+        .photo-card__favorite:hover {
+            background: rgba(255,235,235,0.9);
+            transform: scale(1.1);
+        }
+        .photo-card__favorite.liked {
+            color: #d45757;
+            background: rgba(255,220,220,0.85);
+        }
+
+        .end-message {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            background: rgba(249, 244, 237, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-lg);
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .end-message.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .end-message p {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+        .end-message button {
+            background: var(--accent-deep);
+            border: none;
+            color: #fdfaf5;
+            padding: 0.7rem 2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .end-message button:hover {
+            background: #a4744a;
+            transform: scale(1.04);
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(20,14,10,0.9);
+            backdrop-filter: blur(18px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .lightbox.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .lightbox__content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            transform: scale(0.9);
+            transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .lightbox.open .lightbox__content {
+            transform: scale(1);
+        }
+        .lightbox__image-wrap {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        .lightbox__image {
+            display: block;
+            max-width: 85vw;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        .lightbox__info {
+            color: #e5dcd3;
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .lightbox__close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            z-index: 101;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox__close:hover {
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 480px) {
+            .photo-card { padding: 0.5rem 0.5rem 1rem; }
+            .photo-card__tape { width: 38px; height: 15px; top: -7px; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1 class="header__title">MEMEORIES</h1>
+            <p class="header__subtitle">Swipe to discover</p>
+        </header>
+
+        <div class="stack-container">
+            <div class="stack" id="cardStack"></div>
+            <div class="end-message" id="endMessage">
+                <p>✨ You've seen them all ✨</p>
+                <button id="restartButton">Start again</button>
+            </div>
+        </div>
+
+        <div class="lightbox" id="lightbox">
+            <button class="lightbox__close" id="lightboxClose">✕</button>
+            <div class="lightbox__content">
+                <div class="lightbox__image-wrap">
+                    <img class="lightbox__image" id="lightboxImage" src="" alt="">
+                </div>
+                <p class="lightbox__info" id="lightboxInfo"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== YOUR PHOTOS ====================
+            // ✅ Replace the file path below with a simple filename if you
+            //    copy the image into the same folder as this HTML file.
+            //    Example: 'retouch_2026021022002989.jpg'
+            const photos = [
+                {
+                    id: 1,
+                    src: 'C:\Users\Shruthi Mishra\OneDrive\Desktop\memories\retouch_2026021022002989.jpg',
+                    thumb: 'C:\Users\Shruthi Mishra\OneDrive\Desktop\memories\retouch_2026021022002989.jpg',
+                    caption: 'My first memory',
+                    date: '2026 · May',
+                    tape: 1
+                },
+                {
+                    id: 2,
+                    src: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=500&fit=crop&auto=format',
+                    caption: 'Stargazing at midnight',
+                    date: '2025 · Winter',
+                    tape: 2
+                },
+                {
+                    id: 3,
+                    src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=640&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=320&fit=crop&auto=format',
+                    caption: 'Sunlight through the trees',
+                    date: '2026 · Early Summer',
+                    tape: 3
+                },
+                {
+                    id: 4,
+                    src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&h=500&fit=crop&auto=format',
+                    caption: 'City skyline at dusk',
+                    date: '2025 · Autumn',
+                    tape: 1
+                },
+                {
+                    id: 5,
+                    src: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=640&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=320&fit=crop&auto=format',
+                    caption: 'Golden hour reflections',
+                    date: '2026 · January',
+                    tape: 2
+                },
+                {
+                    id: 6,
+                    src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&auto=format',
+                    caption: 'A quiet gaze',
+                    date: '2026 · February',
+                    tape: 3
+                },
+                {
+                    id: 7,
+                    src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&auto=format',
+                    caption: 'Soft light portrait',
+                    date: '2025 · December',
+                    tape: 1
+                },
+                {
+                    id: 8,
+                    src: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=400&h=500&fit=crop&auto=format',
+                    caption: 'Warm candlelight evening',
+                    date: '2026 · March',
+                    tape: 2
+                },
+                {
+                    id: 9,
+                    src: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=640&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=320&fit=crop&auto=format',
+                    caption: 'Foggy mountain road',
+                    date: '2025 · November',
+                    tape: 3
+                },
+                {
+                    id: 10,
+                    src: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=800&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=400&fit=crop&auto=format',
+                    caption: 'Vintage book collection',
+                    date: '2026 · April',
+                    tape: 1
+                },
+                {
+                    id: 11,
+                    src: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=500&fit=crop&auto=format',
+                    caption: 'Parisian balcony',
+                    date: '2025 · Summer',
+                    tape: 2
+                },
+                {
+                    id: 12,
+                    src: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&auto=format',
+                    caption: 'Sun-kissed afternoon',
+                    date: '2026 · May',
+                    tape: 3
+                }
+            ];
+
+            // ==================== DO NOT EDIT BELOW ====================
+            const stackEl = document.getElementById('cardStack');
+            const endMessageEl = document.getElementById('endMessage');
+            const restartBtn = document.getElementById('restartButton');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxInfo = document.getElementById('lightboxInfo');
+            const lightboxClose = document.getElementById('lightboxClose');
+
+            let currentIndex = 0;
+            let cards = [];
+            const likedPhotos = new Set();
+
+            function createCards() {
+                stackEl.innerHTML = '';
+                cards = photos.map((photo, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'photo-card';
+                    card.setAttribute('data-index', idx);
+                    card.innerHTML = `
+                        <div class="photo-card__tape tape-${photo.tape}"></div>
+                        <div class="photo-card__image-wrap">
+                            <img class="photo-card__image" src="${photo.thumb}" alt="${photo.caption}" draggable="false">
+                        </div>
+                        <button class="photo-card__favorite" data-id="${photo.id}">
+                            ♡
+                        </button>
+                        <p class="photo-card__date">${photo.date}</p>
+                        <p class="photo-card__caption">${photo.caption}</p>
+                    `;
+                    stackEl.appendChild(card);
+                    return card;
+                });
+                updateStackVisuals();
+            }
+
+            function updateStackVisuals() {
+                cards.forEach((card, idx) => {
+                    card.classList.remove('active', 'stacked');
+                    const favBtn = card.querySelector('.photo-card__favorite');
+                    if (idx < currentIndex) {
+                        card.style.display = 'none';
+                        return;
+                    }
+                    card.style.display = '';
+                    if (idx === currentIndex) {
+                        card.classList.add('active');
+                        card.style.transform = '';
+                        card.style.opacity = '1';
+                        card.style.zIndex = '10';
+                        card.style.pointerEvents = 'auto';
+                        const photoId = photos[idx].id;
+                        if (likedPhotos.has(photoId)) {
+                            favBtn.classList.add('liked');
+                            favBtn.innerHTML = '♥';
+                        } else {
+                            favBtn.classList.remove('liked');
+                            favBtn.innerHTML = '♡';
+                        }
+                    } else {
+                        card.classList.add('stacked');
+                        const distance = idx - currentIndex;
+                        const offsetY = Math.min(distance * 6, 18);
+                        const scale = Math.max(0.9, 1 - distance * 0.04);
+                        card.style.transform = `translateY(${offsetY}px) scale(${scale})`;
+                        card.style.opacity = Math.max(0.3, 1 - distance * 0.25);
+                        card.style.zIndex = 10 - distance;
+                        card.style.pointerEvents = 'none';
+                    }
+                });
+
+                if (currentIndex >= photos.length) {
+                    endMessageEl.classList.add('visible');
+                } else {
+                    endMessageEl.classList.remove('visible');
+                }
+            }
+
+            function dismissCard(direction) {
+                if (currentIndex >= photos.length) return;
+                const card = cards[currentIndex];
+                const exitX = direction === 'right' ? window.innerWidth * 1.5 : -window.innerWidth * 1.5;
+                const rotation = direction === 'right' ? 15 : -15;
+                card.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+                card.style.transform = `translateX(${exitX}px) rotate(${rotation}deg)`;
+                card.style.opacity = '0';
+                card.style.pointerEvents = 'none';
+
+                card.addEventListener('transitionend', function handler() {
+                    card.removeEventListener('transitionend', handler);
+                    currentIndex++;
+                    updateStackVisuals();
+                });
+            }
+
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let currentDeltaX = 0;
+            let draggedCard = null;
+            let pointerDownTarget = null;
+
+            function onPointerDown(e) {
+                if (currentIndex >= photos.length) return;
+                const activeCard = cards[currentIndex];
+                if (!activeCard || !activeCard.contains(e.target)) return;
+                e.preventDefault();
+                draggedCard = activeCard;
+                pointerDownTarget = e.target;
+                startX = e.clientX;
+                startY = e.clientY;
+                currentDeltaX = 0;
+                isDragging = false;
+                draggedCard.style.transition = 'none';
+                draggedCard.setPointerCapture(e.pointerId);
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                if (!draggedCard) return;
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                    isDragging = true;
+                }
+                if (!isDragging) return;
+                e.preventDefault();
+                currentDeltaX = deltaX;
+                const rotation = deltaX * 0.08;
+                const opacity = 1 - Math.min(Math.abs(deltaX) / 300, 0.5);
+                draggedCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+                draggedCard.style.opacity = opacity;
+            }
+
+            function onPointerUp(e) {
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+                if (!draggedCard) return;
+                draggedCard.releasePointerCapture(e.pointerId);
+
+                if (isDragging && Math.abs(currentDeltaX) > 80) {
+                    const direction = currentDeltaX > 0 ? 'right' : 'left';
+                    dismissCard(direction);
+                } else {
+                    if (!isDragging) {
+                        const favBtn = pointerDownTarget?.closest('.photo-card__favorite');
+                        if (favBtn) {
+                            const photoId = parseInt(favBtn.getAttribute('data-id'));
+                            toggleFavorite(photoId, favBtn);
+                        } else if (pointerDownTarget?.closest('.photo-card')) {
+                            openLightbox(currentIndex);
+                        }
+                    }
+                    draggedCard.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s';
+                    draggedCard.style.transform = '';
+                    draggedCard.style.opacity = '1';
+                }
+
+                draggedCard = null;
+                pointerDownTarget = null;
+                isDragging = false;
+            }
+
+            function toggleFavorite(photoId, btn) {
+                if (likedPhotos.has(photoId)) {
+                    likedPhotos.delete(photoId);
+                    if (btn) {
+                        btn.classList.remove('liked');
+                        btn.innerHTML = '♡';
+                    }
+                } else {
+                    likedPhotos.add(photoId);
+                    if (btn) {
+                        btn.classList.add('liked');
+                        btn.innerHTML = '♥';
+                    }
+                }
+                if (currentIndex < photos.length && photos[currentIndex].id === photoId) {
+                    const activeFav = cards[currentIndex].querySelector('.photo-card__favorite');
+                    if (activeFav && activeFav !== btn) {
+                        if (likedPhotos.has(photoId)) {
+                            activeFav.classList.add('liked');
+                            activeFav.innerHTML = '♥';
+                        } else {
+                            activeFav.classList.remove('liked');
+                            activeFav.innerHTML = '♡';
+                        }
+                    }
+                }
+            }
+
+            function openLightbox(index) {
+                const photo = photos[index];
+                lightboxImage.src = photo.src;
+                lightboxImage.alt = photo.caption;
+                lightboxInfo.textContent = photo.caption;
+                lightbox.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                lightbox.classList.remove('open');
+                document.body.style.overflow = '';
+                setTimeout(() => {
+                    if (!lightbox.classList.contains('open')) {
+                        lightboxImage.src = '';
+                    }
+                }, 400);
+            }
+
+            lightboxClose.addEventListener('click', closeLightbox);
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) closeLightbox();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (lightbox.classList.contains('open') && e.key === 'Escape') closeLightbox();
+            });
+
+            stackEl.addEventListener('pointerdown', onPointerDown);
+
+            restartBtn.addEventListener('click', () => {
+                currentIndex = 0;
+                cards.forEach(card => {
+                    card.style.display = '';
+                    card.style.transition = '';
+                    card.style.transform = '';
+                    card.style.opacity = '';
+                });
+                updateStackVisuals();
+            });
+
+            createCards();
+        })();
+    </script>
+</body>
+</html>
