@@ -131,13 +131,19 @@
             border-radius: 10px;
             overflow: hidden;
             background: #e8e0d5;
+            position: relative;
         }
-        .photo-card__image {
+        .photo-card__image,
+        .photo-card__video {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
         }
+        .photo-card__video {
+            pointer-events: auto; /* allow video to receive clicks for play/pause if needed, but we'll mute it */
+        }
+
         .photo-card__date {
             font-size: 0.7rem;
             letter-spacing: 0.1em;
@@ -224,6 +230,7 @@
             transform: scale(1.04);
         }
 
+        /* Lightbox (modal) */
         .lightbox {
             position: fixed;
             inset: 0;
@@ -259,12 +266,18 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            max-width: 85vw;
+            max-height: 70vh;
+            background: #1a1a1a;
         }
-        .lightbox__image {
+        .lightbox__image,
+        .lightbox__video {
             display: block;
             max-width: 85vw;
             max-height: 70vh;
             object-fit: contain;
+            width: 100%;
+            height: auto;
         }
         .lightbox__info {
             color: #e5dcd3;
@@ -272,6 +285,7 @@
             font-style: italic;
             font-size: 1rem;
             opacity: 0.9;
+            text-align: center;
         }
         .lightbox__close {
             position: absolute;
@@ -320,8 +334,8 @@
         <div class="lightbox" id="lightbox">
             <button class="lightbox__close" id="lightboxClose">✕</button>
             <div class="lightbox__content">
-                <div class="lightbox__image-wrap">
-                    <img class="lightbox__image" id="lightboxImage" src="" alt="">
+                <div class="lightbox__image-wrap" id="lightboxMedia">
+                    <!-- dynamic img or video injected here -->
                 </div>
                 <p class="lightbox__info" id="lightboxInfo"></p>
             </div>
@@ -330,29 +344,31 @@
 
     <script>
         (function() {
-            // ==================== YOUR PHOTOS ====================
-            // ✅ Replace the file path below with a simple filename if you
-            //    copy the image into the same folder as this HTML file.
-            //    Example: 'retouch_2026021022002989.jpg'
+            // ==================== YOUR MEDIA ITEMS ====================
+            // ✅ First item is a video, rest are images.
+            //    Use simple filenames if you copy the files to the same folder.
             const photos = [
                 {
                     id: 1,
-                    src: '/retouch_2026021022002989.jpg',
-                    thumb: '/retouch_2026021022002989.jpg',
-                    caption: 'My first memory',
+                    type: 'video',   // 'video' or 'image'
+                    src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4',
+                    thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4',
+                    caption: 'My first video memory',  // custom caption
                     date: '2026 · May',
                     tape: 1
                 },
                 {
                     id: 2,
-                    src: '/screen.png',
-                    thumb: '/screen.png',
+                    type: 'image',
+                    src: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=1000&fit=crop&auto=format',
+                    thumb: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=500&fit=crop&auto=format',
                     caption: 'Stargazing at midnight',
                     date: '2025 · Winter',
                     tape: 2
                 },
                 {
                     id: 3,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=640&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=320&fit=crop&auto=format',
                     caption: 'Sunlight through the trees',
@@ -361,6 +377,7 @@
                 },
                 {
                     id: 4,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=1000&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&h=500&fit=crop&auto=format',
                     caption: 'City skyline at dusk',
@@ -369,6 +386,7 @@
                 },
                 {
                     id: 5,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=640&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=320&fit=crop&auto=format',
                     caption: 'Golden hour reflections',
@@ -377,6 +395,7 @@
                 },
                 {
                     id: 6,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&auto=format',
                     caption: 'A quiet gaze',
@@ -385,6 +404,7 @@
                 },
                 {
                     id: 7,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&auto=format',
                     caption: 'Soft light portrait',
@@ -393,6 +413,7 @@
                 },
                 {
                     id: 8,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=800&h=1000&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=400&h=500&fit=crop&auto=format',
                     caption: 'Warm candlelight evening',
@@ -401,6 +422,7 @@
                 },
                 {
                     id: 9,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=640&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=320&fit=crop&auto=format',
                     caption: 'Foggy mountain road',
@@ -409,6 +431,7 @@
                 },
                 {
                     id: 10,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=800&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=400&fit=crop&auto=format',
                     caption: 'Vintage book collection',
@@ -417,6 +440,7 @@
                 },
                 {
                     id: 11,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=1000&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=500&fit=crop&auto=format',
                     caption: 'Parisian balcony',
@@ -425,6 +449,7 @@
                 },
                 {
                     id: 12,
+                    type: 'image',
                     src: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop&auto=format',
                     thumb: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&auto=format',
                     caption: 'Sun-kissed afternoon',
@@ -433,12 +458,12 @@
                 }
             ];
 
-            // ==================== DO NOT EDIT BELOW ====================
+            // ==================== CORE LOGIC ====================
             const stackEl = document.getElementById('cardStack');
             const endMessageEl = document.getElementById('endMessage');
             const restartBtn = document.getElementById('restartButton');
             const lightbox = document.getElementById('lightbox');
-            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxMedia = document.getElementById('lightboxMedia');
             const lightboxInfo = document.getElementById('lightboxInfo');
             const lightboxClose = document.getElementById('lightboxClose');
 
@@ -446,16 +471,28 @@
             let cards = [];
             const likedPhotos = new Set();
 
+            // Build card DOM
             function createCards() {
                 stackEl.innerHTML = '';
                 cards = photos.map((photo, idx) => {
                     const card = document.createElement('div');
                     card.className = 'photo-card';
                     card.setAttribute('data-index', idx);
+
+                    let mediaElement;
+                    if (photo.type === 'video') {
+                        mediaElement = `
+                            <video class="photo-card__video" src="${photo.thumb}" muted autoplay loop playsinline
+                                   disablePictureInPicture controlsList="nodownload nofullscreen noremoteplayback">
+                            </video>`;
+                    } else {
+                        mediaElement = `<img class="photo-card__image" src="${photo.thumb}" alt="${photo.caption}" draggable="false">`;
+                    }
+
                     card.innerHTML = `
                         <div class="photo-card__tape tape-${photo.tape}"></div>
                         <div class="photo-card__image-wrap">
-                            <img class="photo-card__image" src="${photo.thumb}" alt="${photo.caption}" draggable="false">
+                            ${mediaElement}
                         </div>
                         <button class="photo-card__favorite" data-id="${photo.id}">
                             ♡
@@ -528,6 +565,7 @@
                 });
             }
 
+            // Drag & swipe logic
             let isDragging = false;
             let startX = 0, startY = 0;
             let currentDeltaX = 0;
@@ -626,8 +664,23 @@
 
             function openLightbox(index) {
                 const photo = photos[index];
-                lightboxImage.src = photo.src;
-                lightboxImage.alt = photo.caption;
+                lightboxMedia.innerHTML = '';
+                if (photo.type === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'lightbox__video';
+                    video.src = photo.src;
+                    video.controls = true;
+                    video.playsInline = true;
+                    video.autoplay = true;
+                    video.muted = false; // full experience with sound when tapped
+                    lightboxMedia.appendChild(video);
+                } else {
+                    const img = document.createElement('img');
+                    img.className = 'lightbox__image';
+                    img.src = photo.src;
+                    img.alt = photo.caption;
+                    lightboxMedia.appendChild(img);
+                }
                 lightboxInfo.textContent = photo.caption;
                 lightbox.classList.add('open');
                 document.body.style.overflow = 'hidden';
@@ -636,9 +689,10 @@
             function closeLightbox() {
                 lightbox.classList.remove('open');
                 document.body.style.overflow = '';
+                // Clear media to stop video playback
                 setTimeout(() => {
                     if (!lightbox.classList.contains('open')) {
-                        lightboxImage.src = '';
+                        lightboxMedia.innerHTML = '';
                     }
                 }, 400);
             }
