@@ -23,7 +23,6 @@
             --radius-lg: 22px;
             --font-serif: 'Georgia', 'Times New Roman', serif;
             --font-sans: 'Inter', system-ui, sans-serif;
-            --transition: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         * {
@@ -139,9 +138,6 @@
             height: 100%;
             object-fit: cover;
             display: block;
-        }
-        .photo-card__video {
-            pointer-events: auto; /* allow video to receive clicks for play/pause if needed, but we'll mute it */
         }
 
         .photo-card__date {
@@ -327,16 +323,14 @@
             <div class="stack" id="cardStack"></div>
             <div class="end-message" id="endMessage">
                 <p>✨ You've seen them all ✨</p>
-                <button id="restartButton">Start again</button>
+                <button id="restartButton">Shuffle & start again</button>
             </div>
         </div>
 
         <div class="lightbox" id="lightbox">
             <button class="lightbox__close" id="lightboxClose">✕</button>
             <div class="lightbox__content">
-                <div class="lightbox__image-wrap" id="lightboxMedia">
-                    <!-- dynamic img or video injected here -->
-                </div>
+                <div class="lightbox__image-wrap" id="lightboxMedia"></div>
                 <p class="lightbox__info" id="lightboxInfo"></p>
             </div>
         </div>
@@ -344,121 +338,44 @@
 
     <script>
         (function() {
-            // ==================== YOUR MEDIA ITEMS ====================
-            // ✅ First item is a video, rest are images.
-            //    Use simple filenames if you copy the files to the same folder.
-            const photos = [
-                {
-                    id: 1,
-                    type: 'video',   // 'video' or 'image'
-                    src: '/Snapchat-5056784.mp4',
-                    thumb: '/Snapchat-5056784.mp4',
-                    caption: 'My first video memory',  // custom caption
-                    date: '2026 · May',
-                    tape: 1
-                },
-                {
-                    id: 2,
-                    type: 'image',
-                    src: '/retouch_2026021022002989.jpg',
-                    thumb: '/retouch_2026021022002989.jpg',
-                    caption: 'Stargazing at midnight',
-                    date: '2025 · Winter',
-                    tape: 2
-                },
-                {
-                    id: 3,
-                    type: 'image',
-                    src: '/screen.png',
-                    thumb: '/screen.png',
-                    caption: 'Sunlight through the trees',
-                    date: '2026 · Early Summer',
-                    tape: 3
-                },
-                {
-                    id: 4,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=1000&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&h=500&fit=crop&auto=format',
-                    caption: 'City skyline at dusk',
-                    date: '2025 · Autumn',
-                    tape: 1
-                },
-                {
-                    id: 5,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=640&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=320&fit=crop&auto=format',
-                    caption: 'Golden hour reflections',
-                    date: '2026 · January',
-                    tape: 2
-                },
-                {
-                    id: 6,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&auto=format',
-                    caption: 'A quiet gaze',
-                    date: '2026 · February',
-                    tape: 3
-                },
-                {
-                    id: 7,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&auto=format',
-                    caption: 'Soft light portrait',
-                    date: '2025 · December',
-                    tape: 1
-                },
-                {
-                    id: 8,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=800&h=1000&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?w=400&h=500&fit=crop&auto=format',
-                    caption: 'Warm candlelight evening',
-                    date: '2026 · March',
-                    tape: 2
-                },
-                {
-                    id: 9,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=640&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=320&fit=crop&auto=format',
-                    caption: 'Foggy mountain road',
-                    date: '2025 · November',
-                    tape: 3
-                },
-                {
-                    id: 10,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=800&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=400&fit=crop&auto=format',
-                    caption: 'Vintage book collection',
-                    date: '2026 · April',
-                    tape: 1
-                },
-                {
-                    id: 11,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=1000&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=500&fit=crop&auto=format',
-                    caption: 'Parisian balcony',
-                    date: '2025 · Summer',
-                    tape: 2
-                },
-                {
-                    id: 12,
-                    type: 'image',
-                    src: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop&auto=format',
-                    thumb: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&auto=format',
-                    caption: 'Sun-kissed afternoon',
-                    date: '2026 · May',
-                    tape: 3
-                }
+            // ====================================================
+            //   🎬 7 VIDEOS  +  🖼️ 5 PHOTOS  (total 12 items)
+            //   Replace paths with your own files as needed.
+            // ====================================================
+            const mediaList = [
+                // --- Videos (7) ---
+                { id: 'v1', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Dancing light', date: '2026 · March', tape: 1 },
+                { id: 'v2', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Morning breeze', date: '2025 · April', tape: 2 },
+                { id: 'v3', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'City lights', date: '2025 · June', tape: 3 },
+                { id: 'v4', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Lazy afternoon', date: '2026 · February', tape: 1 },
+                { id: 'v5', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Rooftop views', date: '2025 · October', tape: 2 },
+                { id: 'v6', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Night walk', date: '2026 · May', tape: 3 },
+                { id: 'v7', type: 'video', src: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', thumb: 'file:///C:/Users/Shruthi%20Mishra/Videos/Movavi%20Video%20Editor/Projects/VID_20250324_121501.mp4', caption: 'Sunset sparkles', date: '2025 · December', tape: 1 },
+                // --- Photos (5) ---
+                { id: 'p1', type: 'image', src: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=1000&fit=crop&auto=format', thumb: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&h=500&fit=crop&auto=format', caption: 'Stargazing at midnight', date: '2025 · Winter', tape: 2 },
+                { id: 'p2', type: 'image', src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=640&fit=crop&auto=format', thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=320&fit=crop&auto=format', caption: 'Sunlight through the trees', date: '2026 · Early Summer', tape: 3 },
+                { id: 'p3', type: 'image', src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=1000&fit=crop&auto=format', thumb: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&h=500&fit=crop&auto=format', caption: 'City skyline at dusk', date: '2025 · Autumn', tape: 1 },
+                { id: 'p4', type: 'image', src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop&auto=format', thumb: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&auto=format', caption: 'A quiet gaze', date: '2026 · February', tape: 2 },
+                { id: 'p5', type: 'image', src: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=1000&fit=crop&auto=format', thumb: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=500&fit=crop&auto=format', caption: 'Parisian balcony', date: '2025 · Summer', tape: 3 }
             ];
 
-            // ==================== CORE LOGIC ====================
+            // ==================== SHUFFLE & STATE ====================
+            function shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            // This will hold the shuffled order that we actually use.
+            let photos = [];
+
+            function reshuffleMedia() {
+                photos = shuffleArray([...mediaList]);
+            }
+
+            // ==================== DOM ELEMENTS ====================
             const stackEl = document.getElementById('cardStack');
             const endMessageEl = document.getElementById('endMessage');
             const restartBtn = document.getElementById('restartButton');
@@ -471,7 +388,6 @@
             let cards = [];
             const likedPhotos = new Set();
 
-            // Build card DOM
             function createCards() {
                 stackEl.innerHTML = '';
                 cards = photos.map((photo, idx) => {
@@ -565,7 +481,7 @@
                 });
             }
 
-            // Drag & swipe logic
+            // Drag & swipe
             let isDragging = false;
             let startX = 0, startY = 0;
             let currentDeltaX = 0;
@@ -618,7 +534,7 @@
                     if (!isDragging) {
                         const favBtn = pointerDownTarget?.closest('.photo-card__favorite');
                         if (favBtn) {
-                            const photoId = parseInt(favBtn.getAttribute('data-id'));
+                            const photoId = favBtn.getAttribute('data-id');
                             toggleFavorite(photoId, favBtn);
                         } else if (pointerDownTarget?.closest('.photo-card')) {
                             openLightbox(currentIndex);
@@ -672,7 +588,7 @@
                     video.controls = true;
                     video.playsInline = true;
                     video.autoplay = true;
-                    video.muted = false; // full experience with sound when tapped
+                    video.muted = false;
                     lightboxMedia.appendChild(video);
                 } else {
                     const img = document.createElement('img');
@@ -689,12 +605,20 @@
             function closeLightbox() {
                 lightbox.classList.remove('open');
                 document.body.style.overflow = '';
-                // Clear media to stop video playback
                 setTimeout(() => {
                     if (!lightbox.classList.contains('open')) {
                         lightboxMedia.innerHTML = '';
                     }
                 }, 400);
+            }
+
+            function restartStack() {
+                currentIndex = 0;
+                reshuffleMedia();
+                cards = [];
+                stackEl.innerHTML = '';
+                likedPhotos.clear();
+                createCards();
             }
 
             lightboxClose.addEventListener('click', closeLightbox);
@@ -707,17 +631,10 @@
 
             stackEl.addEventListener('pointerdown', onPointerDown);
 
-            restartBtn.addEventListener('click', () => {
-                currentIndex = 0;
-                cards.forEach(card => {
-                    card.style.display = '';
-                    card.style.transition = '';
-                    card.style.transform = '';
-                    card.style.opacity = '';
-                });
-                updateStackVisuals();
-            });
+            restartBtn.addEventListener('click', restartStack);
 
+            // ==================== INIT ====================
+            reshuffleMedia();
             createCards();
         })();
     </script>
